@@ -8,7 +8,7 @@
 .type nameStr,%gnu_unique_object
     
 /*** STUDENTS: Change the next line to your name!  **/
-nameStr: .asciz "Inigo Montoya"  
+nameStr: .asciz "Kristian Binauhan"  
 .align
  
 /* initialize a global variable that C can access to print the nameStr */
@@ -86,7 +86,65 @@ asmEncrypt:
     /* DON'T FORGET TO FOLLOW THE ARM CALLING CONVENTION!  */
 
     /* YOUR asmEncrypt CODE BELOW THIS LINE! VVVVVVVVVVVVVVVVVVVVV  */
-
+    push {r4-r11, LR}
+    
+    LDR R4, [R0] /* Load value from address into R4 */
+    
+    /* Detect if byte is ASCII, leading byte, or continuation byte */
+    MOV R5, 0x0 /* 0xxxxxxx (ASCII) */
+    LSR R6, R0, 7 /* Clear all bits in R0 except MSB */
+    LSL R6, R6, 7 /* Move it back to MSB */
+    CMP R6, R5
+    BEQ isAscii /* Branch if character is ASCII */
+    
+    pop {r4-r11, LR}
+    
+    BX LR
+    
+isAscii:
+    /* Check for uppercase or lowercase */
+    CMP R4, 97 /* In decimal, uppercase range is 65 - 90, lowercase range is 97 - 122 */
+    CMPHS R4, 123 /* Check if within lowercase range if above or equal to 97 */
+    BHS asciiIsNonAlphabet /* If not within lowercase range, branch */
+    BLO asciiIsLowercase
+    
+    /* ASCII is either uppercase or non-alphabet */
+    /* Checks if within uppercase range, branches if not */
+    CMP R4, 48
+    BLO asciiIsNonAlphabet /* < 48 */
+    CMP R4, 90 
+    BHI asciiIsNonAlphabet /* > 90 (not lowercase) */
+    
+    /* ASCII is uppercase, shift by K (value in R1) */
+    ADD R4, R4, R1
+    CMP R4, 90
+    SUBHI R5, R4, 90 /* If higher than 90, subtract value by 90 to get number needed for wraparound */
+    ADDHI R4, R4, 64 /* Wrap around starting with A (65) */
+    
+    STR R4, [R0]
+    
+    pop {r4-r11, LR}
+    
+    BX LR
+    
+asciiIsLowercase:
+    ADD R4, R4, R1
+    CMP R4, 122
+    SUBHI R5, R4, 122
+    SUBHI R4, R4, 96
+    
+    STR R4, [R0]
+    
+    pop {r4-r11, LR}
+    
+    BX LR
+    
+asciiIsNonAlphabet:
+    STR R4, [R0]
+    
+    pop {r4-r11, LR}
+    
+    BX LR
     
     /* YOUR asmEncrypt CODE ABOVE THIS LINE! ^^^^^^^^^^^^^^^^^^^^^  */
    
